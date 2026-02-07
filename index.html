@@ -3135,279 +3135,296 @@ const SistemaAhorroComunitario = () => {
     };
 
     const generarInformePDF = () => {
-      if (!participanteSeleccionado) {
-        alert('❌ Selecciona un participante primero');
-        return;
-      }
+  if (!participanteSeleccionado) {
+    alert('❌ Selecciona un participante primero');
+    return;
+  }
 
-      const p = participantes[participanteSeleccionado];
+  const p = participantes[participanteSeleccionado];
+  
+  // Crear HTML profesional para el PDF
+  let html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Informe - ${p.nombre}</title>
+      <style>
+        @page { size: letter; margin: 2cm; }
+        body { 
+          font-family: Arial, sans-serif; 
+          font-size: 11px; 
+          line-height: 1.4; 
+          color: #333;
+        }
+        .header {
+          text-align: center;
+          border-bottom: 3px solid #4F46E5;
+          padding-bottom: 15px;
+          margin-bottom: 20px;
+        }
+        h1 { 
+          font-size: 20px; 
+          color: #4F46E5; 
+          margin: 0 0 5px 0;
+        }
+        .subtitle {
+          font-size: 12px;
+          color: #666;
+        }
+        .info-box {
+          background: #F3F4F6;
+          border-left: 4px solid #4F46E5;
+          padding: 10px;
+          margin-bottom: 20px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 15px 0;
+          font-size: 10px;
+        }
+        th {
+          background: #4F46E5;
+          color: white;
+          padding: 8px;
+          text-align: left;
+          font-weight: bold;
+        }
+        td {
+          border: 1px solid #ddd;
+          padding: 6px;
+        }
+        tr:nth-child(even) {
+          background: #F9FAFB;
+        }
+        .section-title {
+          font-size: 14px;
+          font-weight: bold;
+          color: #4F46E5;
+          margin: 20px 0 10px 0;
+          border-bottom: 2px solid #E5E7EB;
+          padding-bottom: 5px;
+        }
+        .totales {
+          background: #FEF3C7;
+          border: 2px solid #F59E0B;
+          padding: 15px;
+          margin: 20px 0;
+        }
+        .totales-title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #B45309;
+          margin-bottom: 10px;
+        }
+        .totales-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .totales-item {
+          padding: 5px;
+        }
+        .totales-label {
+          color: #92400E;
+          font-size: 10px;
+        }
+        .totales-value {
+          font-size: 14px;
+          font-weight: bold;
+          color: #000;
+        }
+        .prestamo-box {
+          border: 1px solid #ddd;
+          padding: 10px;
+          margin: 10px 0;
+          background: #FAFAFA;
+        }
+        .footer {
+          margin-top: 30px;
+          padding-top: 15px;
+          border-top: 2px solid #E5E7EB;
+          text-align: center;
+          font-size: 9px;
+          color: #666;
+        }
+        .text-right {
+          text-align: right;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>INFORME INDIVIDUAL</h1>
+        <div class="subtitle">${p.nombre}</div>
+      </div>
       
-      // Crear HTML profesional para el PDF
-      let html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Informe - ${p.nombre}</title>
-          <style>
-            @page { size: letter; margin: 2cm; }
-            body { 
-              font-family: Arial, sans-serif; 
-              font-size: 11px; 
-              line-height: 1.4; 
-              color: #333;
-            }
-            .header {
-              text-align: center;
-              border-bottom: 3px solid #4F46E5;
-              padding-bottom: 15px;
-              margin-bottom: 20px;
-            }
-            h1 { 
-              font-size: 20px; 
-              color: #4F46E5; 
-              margin: 0 0 5px 0;
-            }
-            .subtitle {
-              font-size: 12px;
-              color: #666;
-            }
-            .info-box {
-              background: #F3F4F6;
-              border-left: 4px solid #4F46E5;
-              padding: 10px;
-              margin-bottom: 20px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 15px 0;
-              font-size: 10px;
-            }
-            th {
-              background: #4F46E5;
-              color: white;
-              padding: 8px;
-              text-align: left;
-              font-weight: bold;
-            }
-            td {
-              border: 1px solid #ddd;
-              padding: 6px;
-            }
-            tr:nth-child(even) {
-              background: #F9FAFB;
-            }
-            .section-title {
-              font-size: 14px;
-              font-weight: bold;
-              color: #4F46E5;
-              margin: 20px 0 10px 0;
-              border-bottom: 2px solid #E5E7EB;
-              padding-bottom: 5px;
-            }
-            .totales {
-              background: #FEF3C7;
-              border: 2px solid #F59E0B;
-              padding: 15px;
-              margin: 20px 0;
-            }
-            .totales-title {
-              font-size: 16px;
-              font-weight: bold;
-              color: #B45309;
-              margin-bottom: 10px;
-            }
-            .totales-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 10px;
-            }
-            .totales-item {
-              padding: 5px;
-            }
-            .totales-label {
-              color: #92400E;
-              font-size: 10px;
-            }
-            .totales-value {
-              font-size: 14px;
-              font-weight: bold;
-              color: #000;
-            }
-            .prestamo-box {
-              border: 1px solid #ddd;
-              padding: 10px;
-              margin: 10px 0;
-              background: #FAFAFA;
-            }
-            .footer {
-              margin-top: 30px;
-              padding-top: 15px;
-              border-top: 2px solid #E5E7EB;
-              text-align: center;
-              font-size: 9px;
-              color: #666;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>INFORME INDIVIDUAL</h1>
-            <div class="subtitle">${p.nombre}</div>
-          </div>
-          
-          <div class="info-box">
-            <strong>Documento:</strong> ${p.documento}<br>
-            <strong>Período:</strong> ${nombreMes(config.periodoInicio)} a ${nombreMes(mesSeleccionado)}<br>
-            <strong>Fecha de generación:</strong> ${new Date().toLocaleString('es-CO')}
-          </div>
-          
-          <div class="section-title">📊 HISTORIAL MES A MES</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Mes</th>
-                <th style="text-align:right">Ahorro Mes</th>
-                <th style="text-align:right">Ahorro Acum.</th>
-      `;
+      <div class="info-box">
+        <strong>Documento:</strong> ${p.documento}<br>
+        <strong>Período:</strong> ${nombreMes(config.periodoInicio)} a ${nombreMes(mesSeleccionado)}<br>
+        <strong>Fecha de generación:</strong> ${new Date().toLocaleString('es-CO')}
+      </div>
+      
+      <div class="section-title">📊 HISTORIAL MES A MES</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th style="text-align:right">Ahorro Mes</th>
+            <th style="text-align:right">Ahorro Acum.</th>
+  `;
+  
+  if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
+    html += `
+            <th style="text-align:right">Util. Trad. Mes</th>
+            <th style="text-align:right">Util. Trad. Acum.</th>
+            <th style="text-align:right">S.Util Trad. Mes</th>
+            <th style="text-align:right">S.Util Trad. Acum.</th>
+    `;
+  }
+  
+  if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
+    html += `
+            <th style="text-align:right">Util. Prod. Mes</th>
+            <th style="text-align:right">Util. Prod. Acum.</th>
+            <th style="text-align:right">S.Util Prod. Mes</th>
+            <th style="text-align:right">S.Util Prod. Acum.</th>
+    `;
+  }
+  
+  html += `
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  mesesPeriodo.forEach(mes => {
+    if (mes <= mesSeleccionado) {
+      const ahorro = p.ahorrosMensuales?.find(a => a.mes === mes)?.cantidad || 0;
+      const ahorroAcum = calcularAhorroHastaMes(p.consecutivo, mes);
+      
+      html += `<tr><td><strong>${nombreMes(mes)}</strong></td>`;
+      html += `<td style="text-align:right">${formatearMoneda(ahorro)}</td>`;
+      html += `<td style="text-align:right">${formatearMoneda(ahorroAcum)}</td>`;
       
       if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
-        html += `
-                <th style="text-align:right">Util. Trad. Mes</th>
-                <th style="text-align:right">Util. Trad. Acum.</th>
-        `;
+        const utilTrad = calcularUtilidadTradicionalMes(p.consecutivo, mes);
+        const utilTradAcum = calcularUtilidadTradicionalAcumulada(p.consecutivo, mes);
+        const sobreUtilTrad = calcularSobreUtilidadTradicionalMes(p.consecutivo, mes);
+        const sobreUtilTradAcum = calcularSobreUtilidadTradicionalAcumulada(p.consecutivo, mes);
+        
+        html += `<td style="text-align:right">${formatearMoneda(utilTrad)}</td>`;
+        html += `<td style="text-align:right">${formatearMoneda(utilTradAcum)}</td>`;
+        html += `<td style="text-align:right">${formatearMoneda(sobreUtilTrad)}</td>`;
+        html += `<td style="text-align:right">${formatearMoneda(sobreUtilTradAcum)}</td>`;
       }
       
       if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
-        html += `
-                <th style="text-align:right">Util. Prod. Mes</th>
-                <th style="text-align:right">Util. Prod. Acum.</th>
-        `;
+        const utilProd = calcularUtilidadProductividadMes(p.consecutivo, mes);
+        const utilProdAcum = calcularUtilidadProductividadAcumulada(p.consecutivo, mes);
+        const sobreUtilProd = calcularSobreUtilidadProductividadMes(p.consecutivo, mes);
+        const sobreUtilProdAcum = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mes);
+        
+        html += `<td style="text-align:right">${formatearMoneda(utilProd)}</td>`;
+        html += `<td style="text-align:right">${formatearMoneda(utilProdAcum)}</td>`;
+        html += `<td style="text-align:right">${formatearMoneda(sobreUtilProd)}</td>`;
+        html += `<td style="text-align:right">${formatearMoneda(sobreUtilProdAcum)}</td>`;
       }
       
-      html += `
-              </tr>
-            </thead>
-            <tbody>
-      `;
-      
-      mesesPeriodo.forEach(mes => {
-        if (mes <= mesSeleccionado) {
-          const ahorro = p.ahorrosMensuales?.find(a => a.mes === mes)?.cantidad || 0;
-          const ahorroAcum = calcularAhorroHastaMes(p.consecutivo, mes);
-          
-          html += `<tr><td><strong>${nombreMes(mes)}</strong></td>`;
-          html += `<td style="text-align:right">${formatearMoneda(ahorro)}</td>`;
-          html += `<td style="text-align:right">${formatearMoneda(ahorroAcum)}</td>`;
-          
-          if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
-            const utilTrad = calcularUtilidadTradicionalMes(p.consecutivo, mes);
-            const utilTradAcum = calcularUtilidadTradicionalAcumulada(p.consecutivo, mes);
-            html += `<td style="text-align:right">${formatearMoneda(utilTrad)}</td>`;
-            html += `<td style="text-align:right">${formatearMoneda(utilTradAcum)}</td>`;
-          }
-          
-          if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
-            const utilProd = calcularUtilidadProductividadMes(p.consecutivo, mes);
-            const utilProdAcum = calcularUtilidadProductividadAcumulada(p.consecutivo, mes);
-            html += `<td style="text-align:right">${formatearMoneda(utilProd)}</td>`;
-            html += `<td style="text-align:right">${formatearMoneda(utilProdAcum)}</td>`;
-          }
-          
-          html += `</tr>`;
-        }
-      });
+      html += `</tr>`;
+    }
+  });
+  
+  html += `
+        </tbody>
+      </table>
+  `;
+  
+  // PRÉSTAMOS
+  const prestamosParticipante = Object.values(prestamos).filter(pr => pr.participanteId === p.consecutivo);
+  if (prestamosParticipante.length > 0) {
+    html += `
+      <div class="section-title">💰 PRÉSTAMOS</div>
+    `;
+    
+    prestamosParticipante.forEach(prestamo => {
+      const estadoActual = calcularEstadoPrestamo(prestamo, mesSeleccionado);
       
       html += `
-            </tbody>
-          </table>
+        <div class="prestamo-box">
+          <strong>Préstamo #${prestamo.consecutivo}</strong> - Estado: <span style="color:${prestamo.estado === 'activo' ? '#059669' : '#6B7280'}">${prestamo.estado}</span><br>
+          <strong>Monto original:</strong> ${formatearMoneda(prestamo.monto)} | 
+          <strong>Mes otorgado:</strong> ${nombreMes(prestamo.mesOtorgamiento)}<br>
+          <strong>Saldo actual:</strong> ${formatearMoneda(estadoActual.saldo)} | 
+          <strong>Intereses generados:</strong> ${formatearMoneda(estadoActual.interesesAcumulados)}
       `;
       
-      // PRÉSTAMOS
-      const prestamosParticipante = Object.values(prestamos).filter(pr => pr.participanteId === p.consecutivo);
-      if (prestamosParticipante.length > 0) {
-        html += `
-          <div class="section-title">💰 PRÉSTAMOS</div>
-        `;
-        
-        prestamosParticipante.forEach(prestamo => {
-          const estadoActual = calcularEstadoPrestamo(prestamo, mesSeleccionado);
-          
-          html += `
-            <div class="prestamo-box">
-              <strong>Préstamo #${prestamo.consecutivo}</strong> - Estado: <span style="color:${prestamo.estado === 'activo' ? '#059669' : '#6B7280'}">${prestamo.estado}</span><br>
-              <strong>Monto original:</strong> ${formatearMoneda(prestamo.monto)} | 
-              <strong>Mes otorgado:</strong> ${nombreMes(prestamo.mesOtorgamiento)}<br>
-              <strong>Saldo actual:</strong> ${formatearMoneda(estadoActual.saldo)} | 
-              <strong>Intereses generados:</strong> ${formatearMoneda(estadoActual.interesesAcumulados)}
-          `;
-          
-          if (prestamo.pagosRealizados && prestamo.pagosRealizados.length > 0) {
-            html += `<br><strong>Pagos realizados:</strong><br>`;
-            prestamo.pagosRealizados.forEach(pago => {
-              html += `&nbsp;&nbsp;&nbsp;• ${nombreMes(pago.mes)}: Capital ${formatearMoneda(pago.abonoCapital || 0)}, Intereses ${formatearMoneda(pago.interesesPagados || 0)}<br>`;
-            });
-          }
-          
-          html += `</div>`;
+      if (prestamo.pagosRealizados && prestamo.pagosRealizados.length > 0) {
+        html += `<br><strong>Pagos realizados:</strong><br>`;
+        prestamo.pagosRealizados.forEach(pago => {
+          html += `&nbsp;&nbsp;&nbsp;• ${nombreMes(pago.mes)}: Capital ${formatearMoneda(pago.abonoCapital || 0)}, Intereses ${formatearMoneda(pago.interesesPagados || 0)}<br>`;
         });
       }
       
-      // TOTALES FINALES
-      const totales = calcularTotalesParticipante(p.consecutivo);
-      const ahorroFinal = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
-      const utilProdFinal = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-      const sobreUtilProdFinal = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-      const liquidacion = ahorroFinal + utilProdFinal + sobreUtilProdFinal - totales.totalDeuda;
-      
-      html += `
-          <div class="totales">
-            <div class="totales-title">📈 RESUMEN FINAL</div>
-            <div class="totales-grid">
-              <div class="totales-item">
-                <div class="totales-label">Ahorro Total</div>
-                <div class="totales-value">${formatearMoneda(ahorroFinal)}</div>
-              </div>
-              <div class="totales-item">
-                <div class="totales-label">Utilidad Total</div>
-                <div class="totales-value">${formatearMoneda(utilProdFinal)}</div>
-              </div>
-              <div class="totales-item">
-                <div class="totales-label">Sobre-utilidad Total</div>
-                <div class="totales-value">${formatearMoneda(sobreUtilProdFinal)}</div>
-              </div>
-              <div class="totales-item">
-                <div class="totales-label">Préstamos Activos</div>
-                <div class="totales-value">${totales.cantidadPrestamos}</div>
-              </div>
-              <div class="totales-item">
-                <div class="totales-label">Deuda Total</div>
-                <div class="totales-value" style="color:#DC2626">${formatearMoneda(totales.totalDeuda)}</div>
-              </div>
-              <div class="totales-item" style="grid-column: span 1; background:#FDE68A; padding:10px; border-radius:5px;">
-                <div class="totales-label">LIQUIDACIÓN NETA</div>
-                <div class="totales-value" style="font-size:18px; color:#047857">${formatearMoneda(liquidacion)}</div>
-              </div>
-            </div>
+      html += `</div>`;
+    });
+  }
+  
+  // TOTALES FINALES
+  const totales = calcularTotalesParticipante(p.consecutivo);
+  const ahorroFinal = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
+  const utilProdFinal = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
+  const sobreUtilProdFinal = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
+  const liquidacion = ahorroFinal + utilProdFinal + sobreUtilProdFinal - totales.totalDeuda;
+  
+  html += `
+      <div class="totales">
+        <div class="totales-title">📈 RESUMEN FINAL</div>
+        <div class="totales-grid">
+          <div class="totales-item">
+            <div class="totales-label">Ahorro Total</div>
+            <div class="totales-value">${formatearMoneda(ahorroFinal)}</div>
           </div>
-          
-          <div class="footer">
-            Sistema de Ahorro Comunitario | Generado el ${new Date().toLocaleString('es-CO')}
+          <div class="totales-item">
+            <div class="totales-label">Utilidad Total</div>
+            <div class="totales-value">${formatearMoneda(utilProdFinal)}</div>
           </div>
-        </body>
-        </html>
-      `;
+          <div class="totales-item">
+            <div class="totales-label">Sobre-utilidad Total</div>
+            <div class="totales-value">${formatearMoneda(sobreUtilProdFinal)}</div>
+          </div>
+          <div class="totales-item">
+            <div class="totales-label">Préstamos Activos</div>
+            <div class="totales-value">${totales.cantidadPrestamos}</div>
+          </div>
+          <div class="totales-item">
+            <div class="totales-label">Deuda Total</div>
+            <div class="totales-value" style="color:#DC2626">${formatearMoneda(totales.totalDeuda)}</div>
+          </div>
+          <div class="totales-item" style="grid-column: span 1; background:#FDE68A; padding:10px; border-radius:5px;">
+            <div class="totales-label">LIQUIDACIÓN NETA</div>
+            <div class="totales-value" style="font-size:18px; color:#047857">${formatearMoneda(liquidacion)}</div>
+          </div>
+        </div>
+      </div>
       
-      // Abrir en nueva ventana para imprimir como PDF
-      const ventana = window.open('', '_blank');
-      ventana.document.write(html);
-      ventana.document.close();
-      
-      setTimeout(() => {
-        ventana.print();
-      }, 500);
-    };
+      <div class="footer">
+        Sistema de Ahorro Comunitario | Generado el ${new Date().toLocaleString('es-CO')}
+      </div>
+    </body>
+    </html>
+  `;
+  
+  // Abrir en nueva ventana para imprimir como PDF
+  const ventana = window.open('', '_blank');
+  ventana.document.write(html);
+  ventana.document.close();
+  
+  setTimeout(() => {
+    ventana.print();
+  }, 500);
+};
 
     const generarInformeLiquidacion = () => {
       let texto = `INFORME DE LIQUIDACIÓN GENERAL - ${nombreMes(mesSeleccionado)}\n`;
