@@ -4404,6 +4404,7 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
               <tr>
                 <th class="nombre-col">Nombre</th>
                 <th class="doc-col">Documento</th>
+				<th class="fecha-col">Fecha</th>
                 <th class="firma-col">Firma</th>
                 <th class="huella-col">Huella</th>
               </tr>
@@ -4417,6 +4418,9 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
               <tr>
                 <td class="nombre-col"><strong>${p.nombre}</strong></td>
                 <td class="doc-col">${p.documento}</td>
+				<td class="fecha-col">
+                 <input type="date" class="input-fecha" value="${new Date().toISOString().split('T')[0]}">
+                </td>
                 <td class="firma-col">
                   <div class="linea-firma">
                     ${firma ? `<img src="${firma.firma}" class="firma-digital" alt="Firma"/>` : ''}
@@ -5150,7 +5154,8 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
 
   // Sistema principal (cuando está autenticado)
   return (
-    <div className="font-sans">
+    <div className="font-sans min-h-screen flex flex-col">
+      <div className="flex-grow">
       {seccionActual === 'menu' && <MenuPrincipal />}
       {seccionActual === 'configuracion' && <Configuracion />}
       {seccionActual === 'seccion1' && <Seccion1 />}
@@ -5162,6 +5167,16 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
       {seccionActual === 'seccion7' && <Seccion7 />}
       {seccionActual === 'seccion8' && <Seccion8 />}
       {seccionActual === 'seccion9' && <Seccion9 />}
+    </div>
+	
+	<div className="text-center py-6 bg-gray-50 border-t no-print">
+        <p className="text-xs text-gray-900 font-semibold">
+          Powered by: Ing Rafael Ramos De La Cruz
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          © 2026 - Todos los derechos reservados
+        </p>
+      </div>
     </div>
   );
 };
