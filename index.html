@@ -116,7 +116,10 @@ const SistemaAhorroComunitario = () => {
   const [consecutivoPrestamo, setConsecutivoPrestamo] = useState(1);
   const [multas, setMultas] = useState({});
   const [consecutivoMulta, setConsecutivoMulta] = useState(1);
-  const [montoMultaConfig, setMontoMultaConfig] = useState(5000); // Monto por defecto
+  const [montoMultaConfig, setMontoMultaConfig] = useState(5000);
+  const [gastos, setGastos] = useState({});
+  const [consecutivoGasto, setConsecutivoGasto] = useState(1);
+  const [ajustesCaja, setAjustesCaja] = useState([]); // Monto por defecto
 
   useEffect(() => {
     verificarClave();
@@ -297,6 +300,38 @@ const SistemaAhorroComunitario = () => {
     return multasPagadas.reduce((sum, m) => sum + (m.monto || 0), 0);
   }, [multas]);
 
+  const calcularGastosTotales = useCallback((hastaMes = null) => {
+    if (hastaMes) {
+      return Object.values(gastos)
+        .filter(g => g.mes <= hastaMes)
+        .reduce((sum, g) => sum + (g.monto || 0), 0);
+    }
+    return Object.values(gastos).reduce((sum, g) => sum + (g.monto || 0), 0);
+  }, [gastos]);
+
+  const calcularCuotaGastosPorParticipante = useCallback((hastaMes = null) => {
+    const totalGastos = calcularGastosTotales(hastaMes);
+    const cantidadParticipantes = Object.keys(participantes).length;
+    return cantidadParticipantes > 0 ? totalGastos / cantidadParticipantes : 0;
+  }, [gastos, participantes]);
+
+  const calcularCaja = useCallback((hastaMes = null) => {
+    const mes = hastaMes || mesesPeriodo[mesesPeriodo.length - 1];
+    const disponible = calcularDisponibleTotal(mes);
+    const prestamosActivos = Object.values(prestamos)
+      .filter(p => p.estado === 'Activo')
+      .reduce((sum, p) => {
+        const estado = calcularEstadoPrestamo(p, mes);
+        return sum + estado.saldo;
+      }, 0);
+    
+    const ajustesHastaMes = ajustesCaja
+      .filter(a => a.mes <= mes)
+      .reduce((sum, a) => sum + a.monto, 0);
+    
+    return disponible - prestamosActivos + ajustesHastaMes;
+  }, [mesesPeriodo, calcularDisponibleTotal, prestamos, ajustesCaja]);
+
   const calcularCupoParticipante = useCallback((participanteId, hastaMes) => {
     const ahorro = calcularAhorroHastaMes(participanteId, hastaMes);
     const utilidad = calcularUtilidadProductividadAcumulada(participanteId, hastaMes);
@@ -322,9 +357,10 @@ const SistemaAhorroComunitario = () => {
     });
     
     const totalMultas = calcularMultasTotales(hastaMes);
+    const totalGastos = calcularGastosTotales(hastaMes);
     
-    return totalAhorros + totalUtilidades + totalSobreUtilidades + totalMultas - totalDeudas;
-  }, [participantes, calcularAhorroHastaMes, calcularUtilidadProductividadAcumulada, calcularSobreUtilidadProductividadAcumulada, calcularTotalesParticipante, calcularMultasTotales]);
+    return totalAhorros + totalUtilidades + totalSobreUtilidades + totalMultas - totalDeudas - totalGastos;
+  }, [participantes, calcularAhorroHastaMes, calcularUtilidadProductividadAcumulada, calcularSobreUtilidadProductividadAcumulada, calcularTotalesParticipante, calcularMultasTotales, calcularGastosTotales]);
 
   // ============================================
   // CÁLCULOS - UTILIDAD TRADICIONAL
@@ -459,6 +495,9 @@ const SistemaAhorroComunitario = () => {
         setMultas(parsed.multas || {});
         setConsecutivoMulta(parsed.consecutivoMulta || 1);
         setMontoMultaConfig(parsed.montoMultaConfig || 5000);
+        setGastos(parsed.gastos || {});
+        setConsecutivoGasto(parsed.consecutivoGasto || 1);
+        setAjustesCaja(parsed.ajustesCaja || []);
       }
     } catch (err) {
       console.log('Iniciando con datos vacíos');
@@ -475,7 +514,10 @@ const SistemaAhorroComunitario = () => {
         consecutivoPrestamo,
         multas,
         consecutivoMulta,
-        montoMultaConfig
+        montoMultaConfig,
+        gastos,
+        consecutivoGasto,
+        ajustesCaja
       };
       await window.storage.set('sistemaAhorro', JSON.stringify(datos));
       alert('✓ Datos guardados exitosamente');
@@ -1112,6 +1154,454 @@ const SistemaAhorroComunitario = () => {
 
 
   // ============================================
+  // SECCIÓN 10 - GASTOS
+  // ============================================
+
+  const Seccion10 = () => {
+    const [mesSeleccionado, setMesSeleccionado] = useState(mesesPeriodo[mesesPeriodo.length - 1]);
+    const [descripcion, setDescripcion] = useState('');
+    const [monto, setMonto] = useState('');
+    const [categoria, setCategoria] = useState('Junta');
+
+    const categorias = ['Junta', 'Papelería', 'Impresiones', 'Transporte', 'Refrigerios', 'Otros'];
+
+    const registrarGasto = () => {
+      if (!descripcion.trim() || !monto || parseFloat(monto) <= 0) {
+        alert('❌ Complete todos los campos correctamente');
+        return;
+      }
+
+      const nuevoGasto = {
+        consecutivo: consecutivoGasto.toString().padStart(3, '0'),
+        descripcion: descripcion.trim(),
+        monto: parseFloat(monto),
+        mes: mesSeleccionado,
+        categoria,
+        fecha: new Date().toISOString()
+      };
+
+      setGastos({...gastos, [consecutivoGasto]: nuevoGasto});
+      setConsecutivoGasto(consecutivoGasto + 1);
+      setDescripcion('');
+      setMonto('');
+      alert('✓ Gasto registrado exitosamente');
+    };
+
+    const eliminarGasto = (gastoId) => {
+      if (!window.confirm('¿Eliminar este gasto?')) return;
+      const nuevosGastos = {...gastos};
+      delete nuevosGastos[gastoId];
+      setGastos(nuevosGastos);
+      alert('✓ Gasto eliminado');
+    };
+
+    const gastosMesActual = Object.values(gastos).filter(g => g.mes === mesSeleccionado);
+    const totalMes = gastosMesActual.reduce((sum, g) => sum + g.monto, 0);
+
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Control de Gastos</h2>
+                <p className="text-gray-600">Registro de gastos del sistema</p>
+              </div>
+              <BotonVolver />
+            </div>
+
+            {/* Selector de mes */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mes:</label>
+              <select
+                value={mesSeleccionado}
+                onChange={(e) => setMesSeleccionado(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                {mesesPeriodo.map(mes => (
+                  <option key={mes} value={mes}>{nombreMes(mes)}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Formulario de registro */}
+            <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-bold mb-4">Registrar Nuevo Gasto</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Descripción:</label>
+                  <input
+                    type="text"
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Ej: Refrigerios reunión"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Monto:</label>
+                  <input
+                    type="number"
+                    value={monto}
+                    onChange={(e) => setMonto(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Categoría:</label>
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  >
+                    {categorias.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={registrarGasto}
+                    className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    Registrar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Resumen del mes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
+                <p className="text-sm text-purple-700">Total Gastos del Mes</p>
+                <p className="text-2xl font-bold text-purple-800">{formatearMoneda(totalMes)}</p>
+              </div>
+              <div className="bg-indigo-50 border-2 border-indigo-300 rounded-lg p-4">
+                <p className="text-sm text-indigo-700">Cuota por Participante</p>
+                <p className="text-2xl font-bold text-indigo-800">
+                  {formatearMoneda(Object.keys(participantes).length > 0 ? totalMes / Object.keys(participantes).length : 0)}
+                </p>
+              </div>
+              <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                <p className="text-sm text-orange-700">Total General de Gastos</p>
+                <p className="text-2xl font-bold text-orange-800">{formatearMoneda(calcularGastosTotales())}</p>
+              </div>
+            </div>
+
+            {/* Tabla de gastos */}
+            {gastosMesActual.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-purple-100">
+                      <th className="border border-gray-300 px-2 py-2 text-left">ID</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left">Descripción</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left">Categoría</th>
+                      <th className="border border-gray-300 px-2 py-2 text-right">Monto</th>
+                      <th className="border border-gray-300 px-2 py-2 text-center">Fecha</th>
+                      <th className="border border-gray-300 px-2 py-2 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gastosMesActual.map(g => (
+                      <tr key={g.consecutivo} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-2 py-2">{g.consecutivo}</td>
+                        <td className="border border-gray-300 px-2 py-2">{g.descripcion}</td>
+                        <td className="border border-gray-300 px-2 py-2">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                            {g.categoria}
+                          </span>
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right font-semibold text-purple-600">
+                          {formatearMoneda(g.monto)}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-center text-xs">
+                          {new Date(g.fecha).toLocaleDateString('es-CO')}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-center">
+                          <button
+                            onClick={() => eliminarGasto(g.consecutivo)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Eliminar"
+                          >
+                            <X size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-purple-200 font-bold">
+                      <td colSpan="3" className="border border-gray-300 px-2 py-2 text-right">TOTAL MES:</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-purple-900">
+                        {formatearMoneda(totalMes)}
+                      </td>
+                      <td colSpan="2" className="border border-gray-300"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No hay gastos registrados en {nombreMes(mesSeleccionado)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
+  // ============================================
+  // CONTROL DE CAJA
+  // ============================================
+
+  const SeccionCaja = () => {
+    const [mesSeleccionado, setMesSeleccionado] = useState(mesesPeriodo[mesesPeriodo.length - 1]);
+    const [montoAjuste, setMontoAjuste] = useState('');
+    const [justificacion, setJustificacion] = useState('');
+    const [tipoAjuste, setTipoAjuste] = useState('ingreso');
+
+    const disponible = calcularDisponibleTotal(mesSeleccionado);
+    const prestamosActivos = useMemo(() => {
+      return Object.values(prestamos)
+        .filter(p => p.estado === 'Activo')
+        .reduce((sum, p) => {
+          const estado = calcularEstadoPrestamo(p, mesSeleccionado);
+          return sum + estado.saldo;
+        }, 0);
+    }, [prestamos, mesSeleccionado]);
+
+    const cajaCalculada = disponible - prestamosActivos;
+    const ajustesDelMes = ajustesCaja.filter(a => a.mes === mesSeleccionado);
+    const totalAjustes = ajustesDelMes.reduce((sum, a) => sum + a.monto, 0);
+    const cajaFinal = cajaCalculada + totalAjustes;
+
+    const registrarAjuste = () => {
+      if (!montoAjuste || parseFloat(montoAjuste) === 0) {
+        alert('❌ Ingrese un monto válido');
+        return;
+      }
+      if (!justificacion.trim()) {
+        alert('❌ La justificación es obligatoria');
+        return;
+      }
+
+      const monto = tipoAjuste === 'egreso' ? -Math.abs(parseFloat(montoAjuste)) : Math.abs(parseFloat(montoAjuste));
+
+      const nuevoAjuste = {
+        id: Date.now(),
+        mes: mesSeleccionado,
+        monto,
+        justificacion: justificacion.trim(),
+        fecha: new Date().toISOString()
+      };
+
+      setAjustesCaja([...ajustesCaja, nuevoAjuste]);
+      setMontoAjuste('');
+      setJustificacion('');
+      alert('✓ Ajuste registrado exitosamente');
+    };
+
+    const eliminarAjuste = (ajusteId) => {
+      if (!window.confirm('¿Eliminar este ajuste?')) return;
+      setAjustesCaja(ajustesCaja.filter(a => a.id !== ajusteId));
+      alert('✓ Ajuste eliminado');
+    };
+
+    const verificacionCuadre = Math.abs(cajaFinal) < 1000 ? 'success' : Math.abs(cajaFinal) < 5000 ? 'warning' : 'error';
+
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Control de Caja</h2>
+                <p className="text-gray-600">Verificación y cuadre de caja</p>
+              </div>
+              <BotonVolver />
+            </div>
+
+            {/* Selector de mes */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mes:</label>
+              <select
+                value={mesSeleccionado}
+                onChange={(e) => setMesSeleccionado(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                {mesesPeriodo.map(mes => (
+                  <option key={mes} value={mes}>{nombreMes(mes)}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cálculo de Caja */}
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-bold mb-4">Cálculo Automático de Caja</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Disponible Total:</span>
+                  <span className="text-xl font-bold text-green-600">{formatearMoneda(disponible)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">(-) Préstamos Activos:</span>
+                  <span className="text-xl font-bold text-red-600">{formatearMoneda(prestamosActivos)}</span>
+                </div>
+                <div className="border-t-2 border-blue-300 pt-3 flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">Caja Calculada:</span>
+                  <span className="text-2xl font-bold text-blue-600">{formatearMoneda(cajaCalculada)}</span>
+                </div>
+                {totalAjustes !== 0 && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">(+/-) Ajustes:</span>
+                      <span className={`text-xl font-bold ${totalAjustes >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatearMoneda(totalAjustes)}
+                      </span>
+                    </div>
+                    <div className="border-t-2 border-blue-300 pt-3 flex justify-between items-center">
+                      <span className="text-gray-700 font-semibold">Caja Final:</span>
+                      <span className="text-2xl font-bold text-blue-800">{formatearMoneda(cajaFinal)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Verificación de Cuadre */}
+            <div className={`border-2 rounded-lg p-4 mb-6 ${
+              verificacionCuadre === 'success' ? 'bg-green-50 border-green-300' :
+              verificacionCuadre === 'warning' ? 'bg-yellow-50 border-yellow-300' :
+              'bg-red-50 border-red-300'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  verificacionCuadre === 'success' ? 'bg-green-500' :
+                  verificacionCuadre === 'warning' ? 'bg-yellow-500' :
+                  'bg-red-500'
+                }`}>
+                  {verificacionCuadre === 'success' ? (
+                    <Check className="w-6 h-6 text-white" />
+                  ) : (
+                    <span className="text-white text-xl font-bold">!</span>
+                  )}
+                </div>
+                <div>
+                  <p className={`font-bold ${
+                    verificacionCuadre === 'success' ? 'text-green-800' :
+                    verificacionCuadre === 'warning' ? 'text-yellow-800' :
+                    'text-red-800'
+                  }`}>
+                    {verificacionCuadre === 'success' ? '✓ Caja Cuadrada' :
+                     verificacionCuadre === 'warning' ? '⚠ Diferencia Menor' :
+                     '✗ Diferencia Importante'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {verificacionCuadre === 'success' ? 'La caja está correctamente cuadrada' :
+                     verificacionCuadre === 'warning' ? 'Hay una pequeña diferencia, revisar' :
+                     'Hay una diferencia significativa, requiere ajuste'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Formulario de Ajuste */}
+            <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-bold mb-4">Registrar Ajuste Manual</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tipo:</label>
+                  <select
+                    value={tipoAjuste}
+                    onChange={(e) => setTipoAjuste(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="ingreso">Ingreso (+)</option>
+                    <option value="egreso">Egreso (-)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Monto:</label>
+                  <input
+                    type="number"
+                    value={montoAjuste}
+                    onChange={(e) => setMontoAjuste(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="0"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2">Justificación:</label>
+                  <input
+                    type="text"
+                    value={justificacion}
+                    onChange={(e) => setJustificacion(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Ej: Error de conteo"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={registrarAjuste}
+                className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Registrar Ajuste
+              </button>
+            </div>
+
+            {/* Historial de Ajustes */}
+            {ajustesDelMes.length > 0 && (
+              <div className="overflow-x-auto">
+                <h3 className="text-lg font-bold mb-3">Ajustes del Mes</h3>
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-purple-100">
+                      <th className="border border-gray-300 px-2 py-2 text-left">Fecha</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left">Justificación</th>
+                      <th className="border border-gray-300 px-2 py-2 text-right">Monto</th>
+                      <th className="border border-gray-300 px-2 py-2 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ajustesDelMes.map(a => (
+                      <tr key={a.id} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-2 py-2 text-xs">
+                          {new Date(a.fecha).toLocaleDateString('es-CO')}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2">{a.justificacion}</td>
+                        <td className={`border border-gray-300 px-2 py-2 text-right font-semibold ${
+                          a.monto >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {a.monto >= 0 ? '+' : ''}{formatearMoneda(a.monto)}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-center">
+                          <button
+                            onClick={() => eliminarAjuste(a.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Eliminar"
+                          >
+                            <X size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
+  // ============================================
   // MENÚ PRINCIPAL
   // ============================================
 
@@ -1181,7 +1671,9 @@ const SistemaAhorroComunitario = () => {
               { id: 'seccion6', icon: FileText, titulo: 'Sección 6', subtitulo: 'Informes', descripcion: 'Reportes individuales y generales', color: 'bg-indigo-500' },
               { id: 'seccion7', icon: BarChart3, titulo: 'Sección 7', subtitulo: 'Productividad (REAL)', descripcion: 'Sistema real de utilidades', color: 'bg-pink-500' },
               { id: 'seccion8', icon: FileText, titulo: 'Sección 8', subtitulo: 'Estatutos', descripcion: 'Reglas y documento de firmas', color: 'bg-teal-500' },
-              { id: 'seccion9', icon: DollarSign, titulo: 'Sección 9', subtitulo: 'Multas', descripcion: 'Control de multas por impuntualidad', color: 'bg-orange-500' }
+              { id: 'seccion9', icon: DollarSign, titulo: 'Sección 9', subtitulo: 'Multas', descripcion: 'Control de multas por impuntualidad', color: 'bg-orange-500' },
+              { id: 'seccion10', icon: FileText, titulo: 'Sección 10', subtitulo: 'Gastos', descripcion: 'Registro y control de gastos', color: 'bg-purple-500' },
+              { id: 'caja', icon: DollarSign, titulo: 'Control de Caja', subtitulo: 'Verificación', descripcion: 'Control y cuadre de caja', color: 'bg-blue-500' }
             ].map(seccion => (
               <MenuCard key={seccion.id} {...seccion} onClick={() => setSeccionActual(seccion.id)} />
             ))}
@@ -1216,10 +1708,23 @@ const SistemaAhorroComunitario = () => {
                   {formatearMoneda(calcularMultasTotales())}
                 </p>
               </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Gastos</p>
+                <p className="text-lg md:text-xl font-bold text-purple-600">
+                  {formatearMoneda(calcularGastosTotales())}
+                </p>
+                <p className="text-xs text-gray-500">Cuota: {formatearMoneda(calcularCuotaGastosPorParticipante())}</p>
+              </div>
               <div className="text-center bg-green-50 rounded-lg p-2">
                 <p className="text-sm text-green-700 font-semibold">💰 Disponible Total</p>
                 <p className="text-lg md:text-xl font-bold text-green-700">
                   {formatearMoneda(calcularDisponibleTotal(mesesPeriodo[mesesPeriodo.length - 1]))}
+                </p>
+              </div>
+              <div className="text-center bg-blue-50 rounded-lg p-2">
+                <p className="text-sm text-blue-700 font-semibold">💵 Caja</p>
+                <p className="text-lg md:text-xl font-bold text-blue-700">
+                  {formatearMoneda(calcularCaja())}
                 </p>
               </div>
             </div>
@@ -5167,6 +5672,8 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
       {seccionActual === 'seccion7' && <Seccion7 />}
       {seccionActual === 'seccion8' && <Seccion8 />}
       {seccionActual === 'seccion9' && <Seccion9 />}
+      {seccionActual === 'seccion10' && <Seccion10 />}
+      {seccionActual === 'caja' && <SeccionCaja />}
     </div>
 	
 	<div className="text-center py-6 bg-gray-50 border-t no-print">
