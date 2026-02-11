@@ -86,6 +86,7 @@
     const BarChart3 = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>;
     const Settings = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"/><path d="M1 12h6m6 0h6"/><path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"/></svg>;
     const Save = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+    const Trash2 = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>;
     const Home = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
     const Plus = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
     const Download = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
@@ -119,7 +120,9 @@ const SistemaAhorroComunitario = () => {
   const [montoMultaConfig, setMontoMultaConfig] = useState(5000);
   const [gastos, setGastos] = useState({});
   const [consecutivoGasto, setConsecutivoGasto] = useState(1);
-  const [ajustesCaja, setAjustesCaja] = useState([]); // Monto por defecto
+  const [ajustesCaja, setAjustesCaja] = useState([]);
+  const [notas, setNotas] = useState([]);
+  const [consecutivoNota, setConsecutivoNota] = useState(1); // Monto por defecto
 
   useEffect(() => {
     verificarClave();
@@ -258,7 +261,8 @@ const SistemaAhorroComunitario = () => {
     return estado.saldo * (config.porcentaje / 100);
   }, [mesesPeriodo, calcularEstadoPrestamo, config.porcentaje]);
 
-  const calcularTotalesParticipante = useCallback((participanteId) => {
+  const calcularTotalesParticipante = useCallback((participanteId, hastaMes = null) => {
+    const mesCalculo = hastaMes || mesesPeriodo[mesesPeriodo.length - 1];
     const prestamosParticipante = Object.values(prestamos).filter(
       p => p.participanteId === participanteId && p.estado === 'Activo'
     );
@@ -267,7 +271,7 @@ const SistemaAhorroComunitario = () => {
     let totalIntereses = 0;
     
     prestamosParticipante.forEach(prestamo => {
-      const ultimoMes = mesesPeriodo[mesesPeriodo.length - 1];
+      const ultimoMes = mesCalculo;
       const estado = calcularEstadoPrestamo(prestamo, ultimoMes);
       totalDeuda += estado.saldo;
       totalIntereses += estado.interesesAcumulados;
@@ -336,7 +340,7 @@ const SistemaAhorroComunitario = () => {
     const ahorro = calcularAhorroHastaMes(participanteId, hastaMes);
     const utilidad = calcularUtilidadProductividadAcumulada(participanteId, hastaMes);
     const sobreUtilidad = calcularSobreUtilidadProductividadAcumulada(participanteId, hastaMes);
-    const totales = calcularTotalesParticipante(participanteId);
+    const totales = calcularTotalesParticipante(participanteId, hastaMes);
     
     return ahorro + utilidad + sobreUtilidad - totales.totalDeuda;
   }, [calcularAhorroHastaMes, calcularUtilidadProductividadAcumulada, calcularSobreUtilidadProductividadAcumulada, calcularTotalesParticipante]);
@@ -352,7 +356,7 @@ const SistemaAhorroComunitario = () => {
       totalUtilidades += calcularUtilidadProductividadAcumulada(participanteId, hastaMes);
       totalSobreUtilidades += calcularSobreUtilidadProductividadAcumulada(participanteId, hastaMes);
       
-      const totales = calcularTotalesParticipante(participanteId);
+      const totales = calcularTotalesParticipante(participanteId, hastaMes);
       totalDeudas += totales.totalDeuda;
     });
     
@@ -498,6 +502,8 @@ const SistemaAhorroComunitario = () => {
         setGastos(parsed.gastos || {});
         setConsecutivoGasto(parsed.consecutivoGasto || 1);
         setAjustesCaja(parsed.ajustesCaja || []);
+        setNotas(parsed.notas || []);
+        setConsecutivoNota(parsed.consecutivoNota || 1);
       }
     } catch (err) {
       console.log('Iniciando con datos vacíos');
@@ -517,7 +523,9 @@ const SistemaAhorroComunitario = () => {
         montoMultaConfig,
         gastos,
         consecutivoGasto,
-        ajustesCaja
+        ajustesCaja,
+        notas,
+        consecutivoNota
       };
       await window.storage.set('sistemaAhorro', JSON.stringify(datos));
       alert('✓ Datos guardados exitosamente');
@@ -558,7 +566,7 @@ const SistemaAhorroComunitario = () => {
       
       // Mostrar confirmación con setTimeout para dar tiempo al re-render
       setTimeout(() => {
-        window.alert('✓ Datos reseteados exitosamente.\n\nConfiguración: Enero 2026 a Diciembre 2026 (12 meses)\n\nAhora deberías ver todos los meses incluyendo Febrero.');
+        window.alert('✓ Datos reseteados exitosamente.\n\nConfiguración: Enero 2026 a Diciembre 2026 (12 meses)\n\nAhora puedes usar el sistema desde cero.');
       }, 100);
       
     } catch (err) {
@@ -1152,7 +1160,6 @@ const SistemaAhorroComunitario = () => {
     );
   };
 
-
   // ============================================
   // SECCIÓN 10 - GASTOS
   // ============================================
@@ -1285,7 +1292,7 @@ const SistemaAhorroComunitario = () => {
               </div>
               <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
                 <p className="text-sm text-orange-700">Total General de Gastos</p>
-                <p className="text-2xl font-bold text-orange-800">{formatearMoneda(calcularGastosTotales())}</p>
+                <p className="text-2xl font-bold text-orange-800">{formatearMoneda(calcularGastosTotales(mesSeleccionado))}</p>
               </div>
             </div>
 
@@ -1348,6 +1355,34 @@ const SistemaAhorroComunitario = () => {
                 <p className="text-gray-500">No hay gastos registrados en {nombreMes(mesSeleccionado)}</p>
               </div>
             )}
+
+            {/* RESUMEN GENERAL DEL PERÍODO */}
+            <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-5">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Resumen General del Período</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                  <p className="text-xs text-orange-700 font-semibold uppercase tracking-wide mb-1">📋 Total de Gastos del Período</p>
+                  <p className="text-2xl font-bold text-orange-800">
+                    {formatearMoneda(calcularGastosTotales())}
+                  </p>
+                  <p className="text-xs text-orange-600 mt-1">Todos los meses registrados</p>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                  <p className="text-xs text-purple-700 font-semibold uppercase tracking-wide mb-1">👥 Cuota por Participante</p>
+                  <p className="text-2xl font-bold text-purple-800">
+                    {formatearMoneda(calcularCuotaGastosPorParticipante())}
+                  </p>
+                  <p className="text-xs text-purple-600 mt-1">Total ÷ {Object.keys(participantes).length} participantes</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                  <p className="text-xs text-blue-700 font-semibold uppercase tracking-wide mb-1">📅 Gastos hasta {nombreMes(mesSeleccionado)}</p>
+                  <p className="text-2xl font-bold text-blue-800">
+                    {formatearMoneda(calcularGastosTotales(mesSeleccionado))}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">Cuota: {formatearMoneda(calcularCuotaGastosPorParticipante(mesSeleccionado))}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1375,7 +1410,7 @@ const SistemaAhorroComunitario = () => {
         }, 0);
     }, [prestamos, mesSeleccionado]);
 
-    const cajaCalculada = disponible - prestamosActivos;
+    const cajaCalculada = disponible;
     const ajustesDelMes = ajustesCaja.filter(a => a.mes === mesSeleccionado);
     const totalAjustes = ajustesDelMes.reduce((sum, a) => sum + a.monto, 0);
     const cajaFinal = cajaCalculada + totalAjustes;
@@ -1606,17 +1641,19 @@ const SistemaAhorroComunitario = () => {
   // ============================================
 
   const MenuPrincipal = () => {
+    const [mesResumen, setMesResumen] = useState(mesesPeriodo[mesesPeriodo.length - 1]);
+    
     const resumenPrestamos = useMemo(() => {
       return Object.values(prestamos)
         .filter(p => p.estado === 'Activo')
         .reduce((acc, p) => {
-          const estado = calcularEstadoPrestamo(p, mesesPeriodo[mesesPeriodo.length - 1]);
+          const estado = calcularEstadoPrestamo(p, mesResumen);
           return {
             cantidad: acc.cantidad + 1,
             total: acc.total + estado.saldo
           };
         }, { cantidad: 0, total: 0 });
-    }, [prestamos]);
+    }, [prestamos, mesResumen]);
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
@@ -1673,6 +1710,7 @@ const SistemaAhorroComunitario = () => {
               { id: 'seccion8', icon: FileText, titulo: 'Sección 8', subtitulo: 'Estatutos', descripcion: 'Reglas y documento de firmas', color: 'bg-teal-500' },
               { id: 'seccion9', icon: DollarSign, titulo: 'Sección 9', subtitulo: 'Multas', descripcion: 'Control de multas por impuntualidad', color: 'bg-orange-500' },
               { id: 'seccion10', icon: FileText, titulo: 'Sección 10', subtitulo: 'Gastos', descripcion: 'Registro y control de gastos', color: 'bg-purple-500' },
+              { id: 'seccionNotas', icon: FileText, titulo: 'Sección 11', subtitulo: 'Notas y Apuntes', descripcion: 'Registro de notas y observaciones', color: 'bg-yellow-500' },
               { id: 'caja', icon: DollarSign, titulo: 'Control de Caja', subtitulo: 'Verificación', descripcion: 'Control y cuadre de caja', color: 'bg-blue-500' }
             ].map(seccion => (
               <MenuCard key={seccion.id} {...seccion} onClick={() => setSeccionActual(seccion.id)} />
@@ -1680,52 +1718,93 @@ const SistemaAhorroComunitario = () => {
           </div>
 
           <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Resumen General</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Participantes</p>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">Resumen General</h3>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mr-2">Hasta:</label>
+                <select
+                  value={mesResumen}
+                  onChange={(e) => setMesResumen(e.target.value)}
+                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
+                >
+                  {mesesPeriodo.map(mes => (
+                    <option key={mes} value={mes}>{nombreMes(mes)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {/* FILA 1: Capital - lo más importante */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <p className="text-xs text-green-700 font-semibold uppercase tracking-wide mb-1">💵 Total Ahorros</p>
+                <p className="text-xl font-bold text-green-700">
+                  {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesResumen), 0))}
+                </p>
+                <p className="text-xs text-green-600 mt-1">Hasta {nombreMes(mesResumen)}</p>
+              </div>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                <p className="text-xs text-purple-700 font-semibold uppercase tracking-wide mb-1">📈 Total Utilidad</p>
+                <p className="text-xl font-bold text-purple-700">
+                  {formatearMoneda(Object.keys(participantes).reduce((sum, id) =>
+                    sum + calcularUtilidadProductividadAcumulada(id, mesResumen), 0))}
+                </p>
+                <p className="text-xs text-purple-600 mt-1">Por productividad</p>
+              </div>
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 text-center">
+                <p className="text-xs text-pink-700 font-semibold uppercase tracking-wide mb-1">✨ Total Sobre-utilidad</p>
+                <p className="text-xl font-bold text-pink-700">
+                  {formatearMoneda(Object.keys(participantes).reduce((sum, id) =>
+                    sum + calcularSobreUtilidadProductividadAcumulada(id, mesResumen), 0))}
+                </p>
+                <p className="text-xs text-pink-600 mt-1">Por productividad</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg p-4 text-center text-white shadow-md">
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-90 mb-1">💰 CAPITAL TOTAL</p>
+                <p className="text-2xl font-bold">
+                  {formatearMoneda(Object.keys(participantes).reduce((sum, id) => {
+                    const ahorros = calcularAhorroHastaMes(id, mesResumen);
+                    const utilProd = calcularUtilidadProductividadAcumulada(id, mesResumen);
+                    const sobreUtilProd = calcularSobreUtilidadProductividadAcumulada(id, mesResumen);
+                    return sum + ahorros + utilProd + sobreUtilProd;
+                  }, 0))}
+                </p>
+                <p className="text-xs opacity-75 mt-1">Ahorros + Utilidad + Sobre-util</p>
+              </div>
+            </div>
+
+            {/* FILA 2: Movimientos y obligaciones */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="border border-gray-200 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">👥 Participantes</p>
                 <p className="text-2xl font-bold text-blue-600">{Object.keys(participantes).length}</p>
               </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Préstamos Activos</p>
+              <div className="border border-gray-200 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">🏦 Préstamos Activos</p>
                 <p className="text-2xl font-bold text-yellow-600">{resumenPrestamos.cantidad}</p>
+                <p className="text-xs text-gray-500">{formatearMoneda(resumenPrestamos.total)}</p>
               </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Total Ahorrado</p>
-                <p className="text-lg md:text-xl font-bold text-green-600">
-                  {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroTotal(id), 0))}
-                </p>
+              <div className="border border-gray-200 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">⚠️ Multas</p>
+                <p className="text-xl font-bold text-orange-600">{formatearMoneda(calcularMultasTotales(mesResumen))}</p>
               </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Total Prestado</p>
-                <p className="text-lg md:text-xl font-bold text-red-600">
-                  {formatearMoneda(resumenPrestamos.total)}
-                </p>
+              <div className="border border-gray-200 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">📋 Gastos</p>
+                <p className="text-xl font-bold text-purple-600">{formatearMoneda(calcularGastosTotales(mesResumen))}</p>
+                <p className="text-xs text-gray-500">Cuota: {formatearMoneda(calcularCuotaGastosPorParticipante(mesResumen))}</p>
               </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Multas Recaudadas</p>
-                <p className="text-lg md:text-xl font-bold text-orange-600">
-                  {formatearMoneda(calcularMultasTotales())}
-                </p>
+            </div>
+
+            {/* FILA 3: Disponible y Caja */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4 text-center">
+                <p className="text-sm text-emerald-700 font-semibold uppercase tracking-wide mb-1">💰 Disponible Total</p>
+                <p className="text-2xl font-bold text-emerald-700">{formatearMoneda(calcularDisponibleTotal(mesResumen))}</p>
+                <p className="text-xs text-emerald-600 mt-1">Capital Total - Préstamos - Gastos</p>
               </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Gastos</p>
-                <p className="text-lg md:text-xl font-bold text-purple-600">
-                  {formatearMoneda(calcularGastosTotales())}
-                </p>
-                <p className="text-xs text-gray-500">Cuota: {formatearMoneda(calcularCuotaGastosPorParticipante())}</p>
-              </div>
-              <div className="text-center bg-green-50 rounded-lg p-2">
-                <p className="text-sm text-green-700 font-semibold">💰 Disponible Total</p>
-                <p className="text-lg md:text-xl font-bold text-green-700">
-                  {formatearMoneda(calcularDisponibleTotal(mesesPeriodo[mesesPeriodo.length - 1]))}
-                </p>
-              </div>
-              <div className="text-center bg-blue-50 rounded-lg p-2">
-                <p className="text-sm text-blue-700 font-semibold">💵 Caja</p>
-                <p className="text-lg md:text-xl font-bold text-blue-700">
-                  {formatearMoneda(calcularCaja())}
-                </p>
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
+                <p className="text-sm text-blue-700 font-semibold uppercase tracking-wide mb-1">💵 Caja</p>
+                <p className="text-2xl font-bold text-blue-700">{formatearMoneda(calcularDisponibleTotal(mesResumen))}</p>
+                <p className="text-xs text-blue-600 mt-1">Capital Total - Deudas - Gastos</p>
               </div>
             </div>
             
@@ -2234,6 +2313,19 @@ const SistemaAhorroComunitario = () => {
                           </td>
                         </tr>
                       ))}
+                      <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
+                        <td className="border border-gray-300 px-4 py-2" colSpan="3">TOTALES</td>
+                        <td className="border border-gray-300 px-4 py-2 text-right font-bold text-blue-700">
+                          {formatearMoneda(Object.values(participantes).reduce((sum, p) => sum + calcularAhorroTotal(p.consecutivo), 0))}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right font-bold text-green-700">
+                          {formatearMoneda(Object.values(participantes).reduce((sum, p) => {
+                            const a = p.ahorrosMensuales?.find(a => a.mes === mesActual)?.cantidad || 0;
+                            return sum + a;
+                          }, 0))}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2"></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -2328,7 +2420,20 @@ const SistemaAhorroComunitario = () => {
                         </tr>
                       );
                     })}
-                  </tbody>
+                 
+                    <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
+                      <td className="border border-gray-300 px-4 py-2" colSpan="2">TOTALES</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-blue-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-purple-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularUtilidadTradicionalAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-green-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesSeleccionado) + calcularUtilidadTradicionalAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                    </tr>
+                  </tbody>/tbody>
                 </table>
               </div>
             )}
@@ -2426,7 +2531,20 @@ const SistemaAhorroComunitario = () => {
                         </tr>
                       );
                     })}
-                  </tbody>
+                  
+                    <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
+                      <td className="border border-gray-300 px-4 py-2" colSpan="2">TOTALES</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-purple-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularSobreUtilidadTradicionalAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-pink-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-gray-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado) - calcularSobreUtilidadTradicionalAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                    </tr>
+                  </tbody>/tbody>
                 </table>
               </div>
             )}
@@ -2703,7 +2821,7 @@ const SistemaAhorroComunitario = () => {
                       const ahorro = calcularAhorroHastaMes(nuevoPrestamo.participanteId, nuevoPrestamo.mesOtorgamiento);
                       const utilidad = calcularUtilidadProductividadAcumulada(nuevoPrestamo.participanteId, nuevoPrestamo.mesOtorgamiento);
                       const sobreUtil = calcularSobreUtilidadProductividadAcumulada(nuevoPrestamo.participanteId, nuevoPrestamo.mesOtorgamiento);
-                      const totales = calcularTotalesParticipante(nuevoPrestamo.participanteId);
+                      const totales = calcularTotalesParticipante(nuevoPrestamo.participanteId, nuevoPrestamo.mesOtorgamiento);
                       
                       return (
                         <div className="grid grid-cols-2 gap-3 text-sm">
@@ -3076,6 +3194,28 @@ const SistemaAhorroComunitario = () => {
                             </tr>
                           );
                         })}
+                    <tr className="bg-yellow-100 font-bold border-t-2 border-yellow-400">
+                      {modoUnificar && vista === 'lista' && <td className="border border-gray-300 px-2 py-2"></td>}
+                      <td className="border border-gray-300 px-2 py-2" colSpan="2">TOTALES</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-blue-700">
+                        {formatearMoneda(Object.values(prestamos)
+                          .filter(p => vista === 'liquidados' ? p.estado === 'Liquidado' : p.estado === 'Activo')
+                          .reduce((sum, p) => sum + (p.monto || 0), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2"></td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-red-700">
+                        {formatearMoneda(Object.values(prestamos)
+                          .filter(p => vista === 'liquidados' ? p.estado === 'Liquidado' : p.estado === 'Activo')
+                          .reduce((sum, p) => sum + calcularEstadoPrestamo(p, mesCalculo).saldo, 0))}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-orange-700">
+                        {formatearMoneda(Object.values(prestamos)
+                          .filter(p => vista === 'liquidados' ? p.estado === 'Liquidado' : p.estado === 'Activo')
+                          .reduce((sum, p) => sum + calcularEstadoPrestamo(p, mesCalculo).interesesAcumulados, 0))}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2"></td>
+                      {vista === 'liquidados' && <td className="border border-gray-300 px-2 py-2"></td>}
+                    </tr>
                     </tbody>
                   </table>
                   
@@ -3177,45 +3317,23 @@ const SistemaAhorroComunitario = () => {
                                 </tr>
                               );
                             })}
-                        </tbody>
-                        <tfoot>
-                          <tr className="bg-gray-100 font-bold">
-                            <td colSpan="2" className="border border-gray-300 px-2 py-2 text-right">TOTALES:</td>
-                            <td className="border border-gray-300 px-2 py-2 text-right">
-                              {formatearMoneda(
-                                Object.values(prestamos)
-                                  .filter(p => !filtroParticipante || p.participanteId === filtroParticipante)
-                                  .reduce((sum, p) => sum + p.monto, 0)
-                              )}
-                            </td>
-                            <td className="border border-gray-300"></td>
-                            <td className="border border-gray-300 px-2 py-2 text-right">
-                              {formatearMoneda(
-                                Object.values(prestamos)
-                                  .filter(p => !filtroParticipante || p.participanteId === filtroParticipante)
-                                  .reduce((sum, p) => sum + calcularEstadoPrestamo(p, mesCalculo).saldo, 0)
-                              )}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-2 text-right text-orange-600">
-                              {formatearMoneda(
-                                Object.values(prestamos)
-                                  .filter(p => !filtroParticipante || p.participanteId === filtroParticipante)
-                                  .reduce((sum, p) => sum + calcularEstadoPrestamo(p, mesCalculo).interesesAcumulados, 0)
-                              )}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-2 text-right text-blue-600">
-                              {formatearMoneda(
-                                Object.values(prestamos)
-                                  .filter(p => !filtroParticipante || p.participanteId === filtroParticipante)
-                                  .reduce((sum, p) => {
-                                    return sum + (p.pagosRealizados?.reduce((s, pago) => 
-                                      s + (pago.abonoCapital || 0) + (pago.interesesPagados || 0), 0) || 0);
-                                  }, 0)
-                              )}
-                            </td>
-                            <td colSpan="2" className="border border-gray-300"></td>
-                          </tr>
-                        </tfoot>
+                      
+                        <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
+                          <td className="border border-gray-300 px-2 py-2"></td>
+                          <td className="border border-gray-300 px-2 py-2" colSpan="2">TOTALES</td>
+                          <td className="border border-gray-300 px-2 py-2 text-right text-blue-700">
+                            {formatearMoneda(Object.values(prestamos).filter(p => p.estado === 'Activo').reduce((sum, p) => sum + (p.monto || 0), 0))}
+                          </td>
+                          <td className="border border-gray-300 px-2 py-2"></td>
+                          <td className="border border-gray-300 px-2 py-2 text-right text-red-700">
+                            {formatearMoneda(Object.values(prestamos).filter(p => p.estado === 'Activo').reduce((sum, p) => sum + calcularEstadoPrestamo(p, mesCalculo).saldo, 0))}
+                          </td>
+                          <td className="border border-gray-300 px-2 py-2 text-right text-orange-700">
+                            {formatearMoneda(Object.values(prestamos).filter(p => p.estado === 'Activo').reduce((sum, p) => sum + calcularEstadoPrestamo(p, mesCalculo).interesesAcumulados, 0))}
+                          </td>
+                          <td className="border border-gray-300 px-2 py-2"></td>
+                        </tr>
+                        </tbody>                        
                       </table>
                     </div>
                     
@@ -3525,54 +3643,43 @@ const SistemaAhorroComunitario = () => {
                           </tr>
                         );
                       })}
-                      {/* FILA DE TOTALES */}
-                      {prestamosActivos.length > 0 && (() => {
-                        let totalAbonoCapital = 0;
-                        let totalInteresesPagados = 0;
-                        let totalAPagarSum = 0;
-                        let totalPagaCon = 0;
-                        let totalCambioSum = 0;
-                        
-                        prestamosActivos.forEach(prestamo => {
-                          const abonoCapital = parseFloat(pagos[prestamo.consecutivo]?.abonoCapital || 0);
-                          const interesesPagados = parseFloat(pagos[prestamo.consecutivo]?.interesesPagados || 0);
-                          const pagaCon = parseFloat(pagos[prestamo.consecutivo]?.pagaCon || 0);
-                          const totalAPagar = abonoCapital + interesesPagados;
-                          const cambio = pagaCon - totalAPagar;
-                          
-                          totalAbonoCapital += abonoCapital;
-                          totalInteresesPagados += interesesPagados;
-                          totalAPagarSum += totalAPagar;
-                          totalPagaCon += pagaCon;
-                          if (cambio > 0) totalCambioSum += cambio;
-                        });
-                        
-                        return (
-                          <tr className="bg-gray-100 font-bold border-t-4 border-gray-400">
-                            <td colSpan="4" className="border border-gray-300 px-4 py-3 text-right text-lg">
-                              TOTALES:
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-right text-lg text-blue-700">
-                              {formatearMoneda(totalAbonoCapital)}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-right text-lg text-blue-700">
-                              {formatearMoneda(totalInteresesPagados)}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-right bg-blue-100 text-lg text-blue-800">
-                              {formatearMoneda(totalAPagarSum)}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-right bg-green-100 text-lg text-green-800">
-                              {formatearMoneda(totalPagaCon)}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-right bg-yellow-100 text-lg text-yellow-800">
-                              {formatearMoneda(totalCambioSum)}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-center bg-purple-100">
-                              -
-                            </td>
-                          </tr>
-                        );
-                      })()}
+                      
+                      <tr className="bg-red-100 font-bold border-t-2 border-red-400">
+                        <td className="border border-gray-300 px-2 py-2" colSpan="2">TOTALES</td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-blue-700">
+                          {formatearMoneda(prestamosActivos.reduce((sum, p) => {
+                            const idx = mesesPeriodo.indexOf(mesSeleccionado);
+                            const mesPrev = idx > 0 ? mesesPeriodo[idx - 1] : p.mesOtorgamiento;
+                            return sum + calcularEstadoPrestamo(p, mesPrev).saldo;
+                          }, 0))}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-orange-700">
+                          {formatearMoneda(prestamosActivos.reduce((sum, p) => sum + calcularInteresMes(p, mesSeleccionado), 0))}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-green-700">
+                          {formatearMoneda(prestamosActivos.reduce((sum, p) => {
+                            const pago = pagos[p.consecutivo];
+                            return sum + parseFloat(pago?.abonoCapital || 0);
+                          }, 0))}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-green-700">
+                          {formatearMoneda(prestamosActivos.reduce((sum, p) => {
+                            const pago = pagos[p.consecutivo];
+                            return sum + parseFloat(pago?.interesesPagados || 0);
+                          }, 0))}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-blue-700 bg-blue-50">
+                          {formatearMoneda(prestamosActivos.reduce((sum, p) => sum + calcularInteresMes(p, mesSeleccionado), 0))}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right font-bold text-green-700 bg-green-50">
+                          {formatearMoneda(prestamosActivos.reduce((sum, p) => {
+                            const pago = pagos[p.consecutivo];
+                            return sum + parseFloat(pago?.pagaCon || 0);
+                          }, 0))}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 bg-yellow-50"></td>
+                        <td className="border border-gray-300 px-2 py-2 bg-purple-50"></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -3740,7 +3847,7 @@ const SistemaAhorroComunitario = () => {
         });
       }
 
-      const totales = calcularTotalesParticipante(p.consecutivo);
+      const totales = calcularTotalesParticipante(p.consecutivo, mesSeleccionado);
       const ahorroFinal = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
       const utilProdFinal = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
       const sobreUtilProdFinal = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
@@ -3884,7 +3991,7 @@ const SistemaAhorroComunitario = () => {
                 <th class="col-numero">Ahorro Total</th>
                 <th class="col-numero">Utilidad</th>
                 <th class="col-numero">Sobre-utilidad</th>
-                <th class="col-numero">Préstamos</th>
+                <th class="col-numero" style="background:#1e40af;">CAPITAL TOTAL</th>
                 <th class="col-numero">Deuda</th>
                 <th class="col-numero">LIQUIDACIÓN</th>
               </tr>
@@ -3895,21 +4002,26 @@ const SistemaAhorroComunitario = () => {
       let totalAhorro = 0;
       let totalUtilidad = 0;
       let totalSobreUtil = 0;
-      let totalPrestamos = 0;
+      let totalCapitalPdf = 0;
       let totalDeuda = 0;
       let totalLiquidacion = 0;
       
       Object.values(participantes).forEach(p => {
         const ahorroTotal = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
-        const utilidadProd = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-        const sobreUtilProd = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-        const totales = calcularTotalesParticipante(p.consecutivo);
-        const liquidacion = ahorroTotal + utilidadProd + sobreUtilProd - totales.totalDeuda;
+        const utilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') ? calcularUtilidadTradicionalAcumulada(p.consecutivo, mesSeleccionado) : 0;
+        const sobreUtilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') ? calcularSobreUtilidadTradicionalAcumulada(p.consecutivo, mesSeleccionado) : 0;
+        const utilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') ? calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado) : 0;
+        const sobreUtilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') ? calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado) : 0;
+        const utilidad = utilTrad + utilProd;
+        const sobreUtil = sobreUtilTrad + sobreUtilProd;
+        const capitalTotal = ahorroTotal + utilidad + sobreUtil;
+        const totales = calcularTotalesParticipante(p.consecutivo, mesSeleccionado);
+        const liquidacion = capitalTotal - totales.totalDeuda;
         
         totalAhorro += ahorroTotal;
-        totalUtilidad += utilidadProd;
-        totalSobreUtil += sobreUtilProd;
-        totalPrestamos += totales.cantidadPrestamos;
+        totalUtilidad += utilidad;
+        totalSobreUtil += sobreUtil;
+        totalCapitalPdf += capitalTotal;
         totalDeuda += totales.totalDeuda;
         totalLiquidacion += liquidacion;
         
@@ -3918,9 +4030,9 @@ const SistemaAhorroComunitario = () => {
                 <td>${p.consecutivo}</td>
                 <td><strong>${p.nombre}</strong></td>
                 <td class="text-right">${formatearMoneda(ahorroTotal)}</td>
-                <td class="text-right" style="color:#EC4899">${formatearMoneda(utilidadProd)}</td>
-                <td class="text-right" style="color:#059669">${formatearMoneda(sobreUtilProd)}</td>
-                <td class="text-right">${totales.cantidadPrestamos}</td>
+                <td class="text-right" style="color:#EC4899">${formatearMoneda(utilidad)}</td>
+                <td class="text-right" style="color:#059669">${formatearMoneda(sobreUtil)}</td>
+                <td class="text-right" style="background:#dbeafe;font-weight:bold;color:#1e40af;">${formatearMoneda(capitalTotal)}</td>
                 <td class="text-right" style="color:#DC2626">${formatearMoneda(totales.totalDeuda)}</td>
                 <td class="text-right ${liquidacion >= 0 ? 'positivo' : 'negativo'}">
                   ${formatearMoneda(liquidacion)}
@@ -3936,7 +4048,7 @@ const SistemaAhorroComunitario = () => {
                 <td class="text-right">${formatearMoneda(totalAhorro)}</td>
                 <td class="text-right">${formatearMoneda(totalUtilidad)}</td>
                 <td class="text-right">${formatearMoneda(totalSobreUtil)}</td>
-                <td class="text-right">${totalPrestamos}</td>
+                <td class="text-right" style="background:#dbeafe;font-weight:bold;color:#1e40af;">${formatearMoneda(totalCapitalPdf)}</td>
                 <td class="text-right">${formatearMoneda(totalDeuda)}</td>
                 <td class="text-right" style="font-size:13px; color:#047857;">
                   ${formatearMoneda(totalLiquidacion)}
@@ -4099,27 +4211,27 @@ const SistemaAhorroComunitario = () => {
             <thead>
               <tr>
                 <th>Mes</th>
-                <th style="text-align:right">Ahorro Mes</th>
-                <th style="text-align:right">Ahorro Acum.</th>
+                <th style="text-align:right">Ahorro</th>
       `;
       
       if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
         html += `
-                <th style="text-align:right">Util. Trad. Mes</th>
-                <th style="text-align:right">Util. Trad. Acum.</th>
+                <th style="text-align:right">Util. Trad.</th>
+                <th style="text-align:right">S.Util Trad.</th>
         `;
       }
       
       if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
         html += `
-                <th style="text-align:right">Util. Prod. Mes</th>
-                <th style="text-align:right">Util. Prod. Acum.</th>
-                <th style="text-align:right">S.Util Prod. Mes</th>
-                <th style="text-align:right">S.Util Prod. Acum.</th>
+                <th style="text-align:right">Util. Prod.</th>
+                <th style="text-align:right">S.Util Prod.</th>
         `;
       }
       
       html += `
+                <th style="text-align:right;background:#dcfce7;font-weight:bold">Total Mes</th>
+                <th style="text-align:right;background:#fee2e2">Deuda</th>
+                <th style="text-align:right;background:#fef9c3;font-weight:bold">Liquidación</th>
               </tr>
             </thead>
             <tbody>
@@ -4132,29 +4244,74 @@ const SistemaAhorroComunitario = () => {
           
           html += `<tr><td><strong>${nombreMes(mes)}</strong></td>`;
           html += `<td style="text-align:right">${formatearMoneda(ahorro)}</td>`;
-          html += `<td style="text-align:right">${formatearMoneda(ahorroAcum)}</td>`;
+          
+          let utilTradMesPdf = 0, sobreUtilTradMesPdf = 0;
+          let utilProdMesPdf = 0, sobreUtilProdMesPdf = 0;
           
           if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
-            const utilTrad = calcularUtilidadTradicionalMes(p.consecutivo, mes);
-            const utilTradAcum = calcularUtilidadTradicionalAcumulada(p.consecutivo, mes);
-            html += `<td style="text-align:right">${formatearMoneda(utilTrad)}</td>`;
-            html += `<td style="text-align:right">${formatearMoneda(utilTradAcum)}</td>`;
+            utilTradMesPdf = calcularUtilidadTradicionalMes(p.consecutivo, mes);
+            const sobreUtilTrad = calcularSobreUtilidadTradicionalMes(p.consecutivo, mes);
+            sobreUtilTradMesPdf = sobreUtilTrad;
+            html += `<td style="text-align:right">${formatearMoneda(utilTradMesPdf)}</td>`;
+            html += `<td style="text-align:right;color:#059669">${formatearMoneda(sobreUtilTrad)}</td>`;
           }
           
           if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
-            const utilProd = calcularUtilidadProductividadMes(p.consecutivo, mes);
-            const utilProdAcum = calcularUtilidadProductividadAcumulada(p.consecutivo, mes);
+            utilProdMesPdf = calcularUtilidadProductividadMes(p.consecutivo, mes);
             const sobreUtilProd = calcularSobreUtilidadProductividadMes(p.consecutivo, mes);
-            const sobreUtilProdAcum = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mes);
-            html += `<td style="text-align:right">${formatearMoneda(utilProd)}</td>`;
-            html += `<td style="text-align:right">${formatearMoneda(utilProdAcum)}</td>`;
+            sobreUtilProdMesPdf = sobreUtilProd;
+            html += `<td style="text-align:right">${formatearMoneda(utilProdMesPdf)}</td>`;
             html += `<td style="text-align:right;color:#059669">${formatearMoneda(sobreUtilProd)}</td>`;
-            html += `<td style="text-align:right;color:#059669">${formatearMoneda(sobreUtilProdAcum)}</td>`;
           }
           
+          const totalMesPdf = ahorro + utilTradMesPdf + sobreUtilTradMesPdf + utilProdMesPdf + sobreUtilProdMesPdf;
+          const deuda = calcularTotalesParticipante(p.consecutivo, mesSeleccionado).totalDeuda;
+          
+          const liquidacionMesPdf = totalMesPdf - deuda;
+          html += `<td style="text-align:right;background:#dcfce7;font-weight:bold;color:#166534">${formatearMoneda(totalMesPdf)}</td>`;
+          html += `<td style="text-align:right;background:#fee2e2;color:#dc2626">${formatearMoneda(deuda)}</td>`;
+          html += `<td style="text-align:right;background:${liquidacionMesPdf >= 0 ? '#d1fae5' : '#fef2f2'};font-weight:bold;color:${liquidacionMesPdf >= 0 ? '#047857' : '#dc2626'}">${formatearMoneda(liquidacionMesPdf)}</td>`;
           html += `</tr>`;
         }
       });
+      
+      // Fila de TOTALES en la tabla del PDF individual
+      let pdfTotAhorro = 0, pdfTotUtilTrad = 0, pdfTotSobreUtilTrad = 0;
+      let pdfTotUtilProd = 0, pdfTotSobreUtilProd = 0;
+      mesesPeriodo.forEach(mes => {
+        if (mes <= mesSeleccionado) {
+          pdfTotAhorro += p.ahorrosMensuales?.find(a => a.mes === mes)?.cantidad || 0;
+          if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
+            pdfTotUtilTrad += calcularUtilidadTradicionalMes(p.consecutivo, mes);
+            pdfTotSobreUtilTrad += calcularSobreUtilidadTradicionalMes(p.consecutivo, mes);
+          }
+          if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
+            pdfTotUtilProd += calcularUtilidadProductividadMes(p.consecutivo, mes);
+            pdfTotSobreUtilProd += calcularSobreUtilidadProductividadMes(p.consecutivo, mes);
+          }
+        }
+      });
+      const pdfTotTotalMes = pdfTotAhorro +
+        (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas' ? pdfTotUtilTrad + pdfTotSobreUtilTrad : 0) +
+        (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas' ? pdfTotUtilProd + pdfTotSobreUtilProd : 0);
+      const pdfTotDeuda = calcularTotalesParticipante(p.consecutivo, mesSeleccionado).totalDeuda;
+      
+      html += `<tr style="background:#e5e7eb;font-weight:bold;border-top:3px solid #9ca3af;">`;
+      html += `<td style="text-align:center;padding:6px;">TOTALES</td>`;
+      html += `<td style="text-align:right;padding:6px;">${formatearMoneda(pdfTotAhorro)}</td>`;
+      if (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') {
+        html += `<td style="text-align:right;padding:6px;">${formatearMoneda(pdfTotUtilTrad)}</td>`;
+        html += `<td style="text-align:right;padding:6px;color:#059669;">${formatearMoneda(pdfTotSobreUtilTrad)}</td>`;
+      }
+      if (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') {
+        html += `<td style="text-align:right;padding:6px;">${formatearMoneda(pdfTotUtilProd)}</td>`;
+        html += `<td style="text-align:right;padding:6px;color:#059669;">${formatearMoneda(pdfTotSobreUtilProd)}</td>`;
+      }
+      const pdfTotLiquidacion = pdfTotTotalMes - pdfTotDeuda;
+      html += `<td style="text-align:right;padding:6px;background:#dcfce7;color:#166534;">${formatearMoneda(pdfTotTotalMes)}</td>`;
+      html += `<td style="text-align:right;padding:6px;background:#fee2e2;color:#dc2626;">${formatearMoneda(pdfTotDeuda)}</td>`;
+      html += `<td style="text-align:right;padding:6px;background:#fef9c3;font-weight:bold;color:${pdfTotLiquidacion >= 0 ? '#047857' : '#dc2626'};">${formatearMoneda(pdfTotLiquidacion)}</td>`;
+      html += `</tr>`;
       
       html += `
             </tbody>
@@ -4192,7 +4349,7 @@ const SistemaAhorroComunitario = () => {
       }
       
       // TOTALES FINALES
-      const totales = calcularTotalesParticipante(p.consecutivo);
+      const totales = calcularTotalesParticipante(p.consecutivo, mesSeleccionado);
       const ahorroFinal = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
       const utilProdFinal = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
       const sobreUtilProdFinal = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
@@ -4213,6 +4370,10 @@ const SistemaAhorroComunitario = () => {
               <div class="totales-item">
                 <div class="totales-label">Sobre-utilidad Total</div>
                 <div class="totales-value">${formatearMoneda(sobreUtilProdFinal)}</div>
+              </div>
+              <div class="totales-item" style="background:#dbeafe;border-radius:5px;padding:10px;">
+                <div class="totales-label" style="color:#1e40af;">💰 CAPITAL TOTAL</div>
+                <div class="totales-value" style="font-size:18px;color:#1e40af;">${formatearMoneda(ahorroFinal + utilProdFinal + sobreUtilProdFinal)}</div>
               </div>
               <div class="totales-item">
                 <div class="totales-label">Préstamos Activos</div>
@@ -4256,7 +4417,7 @@ const SistemaAhorroComunitario = () => {
         const ahorroTotal = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
         const utilidadProd = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
         const sobreUtilProd = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-        const totales = calcularTotalesParticipante(p.consecutivo);
+        const totales = calcularTotalesParticipante(p.consecutivo, mesSeleccionado);
         const liquidacion = ahorroTotal + utilidadProd + sobreUtilProd - totales.totalDeuda;
 
         texto += `${p.consecutivo} - ${p.nombre}\n`;
@@ -4393,6 +4554,7 @@ const SistemaAhorroComunitario = () => {
                         <th className="border border-gray-300 px-2 py-2 text-right">Ahorro</th>
                         <th className="border border-gray-300 px-2 py-2 text-right">Utilidad</th>
                         <th className="border border-gray-300 px-2 py-2 text-right">Sobre-util</th>
+                        <th className="border border-gray-300 px-2 py-2 text-right bg-blue-100 font-bold">CAPITAL TOTAL</th>
                         <th className="border border-gray-300 px-2 py-2 text-right">Deuda</th>
                         <th className="border border-gray-300 px-2 py-2 text-right">LIQUIDACIÓN</th>
                       </tr>
@@ -4400,10 +4562,20 @@ const SistemaAhorroComunitario = () => {
                     <tbody>
                       {Object.values(participantes).map(p => {
                         const ahorro = calcularAhorroHastaMes(p.consecutivo, mesSeleccionado);
-                        const utilidad = calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-                        const sobreUtil = calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado);
-                        const totales = calcularTotalesParticipante(p.consecutivo);
-                        const liquidacion = ahorro + utilidad + sobreUtil - totales.totalDeuda;
+                        const utilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                          ? calcularUtilidadTradicionalAcumulada(p.consecutivo, mesSeleccionado) : 0;
+                        const sobreUtilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                          ? calcularSobreUtilidadTradicionalAcumulada(p.consecutivo, mesSeleccionado) : 0;
+                        const utilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                          ? calcularUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado) : 0;
+                        const sobreUtilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                          ? calcularSobreUtilidadProductividadAcumulada(p.consecutivo, mesSeleccionado) : 0;
+                        
+                        const utilidad = utilTrad + utilProd;
+                        const sobreUtil = sobreUtilTrad + sobreUtilProd;
+                        const capitalTotal = ahorro + utilidad + sobreUtil;
+                        const totales = calcularTotalesParticipante(p.consecutivo, mesSeleccionado);
+                        const liquidacion = capitalTotal - totales.totalDeuda;
 
                         return (
                           <tr key={p.consecutivo} className="hover:bg-gray-50">
@@ -4416,6 +4588,9 @@ const SistemaAhorroComunitario = () => {
                             <td className="border border-gray-300 px-2 py-2 text-right text-green-600">
                               {formatearMoneda(sobreUtil)}
                             </td>
+                            <td className="border border-gray-300 px-2 py-2 text-right bg-blue-100 font-bold text-blue-800">
+                              {formatearMoneda(capitalTotal)}
+                            </td>
                             <td className="border border-gray-300 px-2 py-2 text-right text-red-600">
                               {formatearMoneda(totales.totalDeuda)}
                             </td>
@@ -4427,6 +4602,79 @@ const SistemaAhorroComunitario = () => {
                           </tr>
                         );
                       })}
+                      
+                      {/* FILA DE TOTALES */}
+                      <tr className="bg-gray-200 font-bold">
+                        <td className="border border-gray-300 px-2 py-2 text-center" colSpan="2">TOTALES</td>
+                        <td className="border border-gray-300 px-2 py-2 text-right">
+                          {formatearMoneda(
+                            Object.keys(participantes).reduce((sum, id) => 
+                              sum + calcularAhorroHastaMes(id, mesSeleccionado), 0)
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-pink-600">
+                          {formatearMoneda(
+                            Object.keys(participantes).reduce((sum, id) => {
+                              const utilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                                ? calcularUtilidadTradicionalAcumulada(id, mesSeleccionado) : 0;
+                              const utilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                                ? calcularUtilidadProductividadAcumulada(id, mesSeleccionado) : 0;
+                              return sum + utilTrad + utilProd;
+                            }, 0)
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-green-600">
+                          {formatearMoneda(
+                            Object.keys(participantes).reduce((sum, id) => {
+                              const sobreUtilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                                ? calcularSobreUtilidadTradicionalAcumulada(id, mesSeleccionado) : 0;
+                              const sobreUtilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                                ? calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado) : 0;
+                              return sum + sobreUtilTrad + sobreUtilProd;
+                            }, 0)
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right bg-blue-100 font-bold text-blue-800">
+                          {formatearMoneda(
+                            Object.keys(participantes).reduce((sum, id) => {
+                              const ahorro = calcularAhorroHastaMes(id, mesSeleccionado);
+                              const utilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                                ? calcularUtilidadTradicionalAcumulada(id, mesSeleccionado) : 0;
+                              const sobreUtilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                                ? calcularSobreUtilidadTradicionalAcumulada(id, mesSeleccionado) : 0;
+                              const utilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                                ? calcularUtilidadProductividadAcumulada(id, mesSeleccionado) : 0;
+                              const sobreUtilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                                ? calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado) : 0;
+                              return sum + ahorro + utilTrad + sobreUtilTrad + utilProd + sobreUtilProd;
+                            }, 0)
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right text-red-600">
+                          {formatearMoneda(
+                            Object.keys(participantes).reduce((sum, id) => 
+                              sum + calcularTotalesParticipante(id, mesSeleccionado).totalDeuda, 0)
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-right font-bold">
+                          {formatearMoneda(
+                            Object.keys(participantes).reduce((sum, id) => {
+                              const ahorro = calcularAhorroHastaMes(id, mesSeleccionado);
+                              const utilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                                ? calcularUtilidadTradicionalAcumulada(id, mesSeleccionado) : 0;
+                              const sobreUtilTrad = (config.tipoUtilidad === 'tradicional' || config.tipoUtilidad === 'ambas') 
+                                ? calcularSobreUtilidadTradicionalAcumulada(id, mesSeleccionado) : 0;
+                              const utilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                                ? calcularUtilidadProductividadAcumulada(id, mesSeleccionado) : 0;
+                              const sobreUtilProd = (config.tipoUtilidad === 'productividad' || config.tipoUtilidad === 'ambas') 
+                                ? calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado) : 0;
+                              const capitalTotal = ahorro + utilTrad + sobreUtilTrad + utilProd + sobreUtilProd;
+                              const deuda = calcularTotalesParticipante(id, mesSeleccionado).totalDeuda;
+                              return sum + (capitalTotal - deuda);
+                            }, 0)
+                          )}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -4457,25 +4705,22 @@ const SistemaAhorroComunitario = () => {
                         <thead>
                           <tr className="bg-indigo-50">
                             <th className="border border-gray-300 px-2 py-2 text-left">Mes</th>
-                            <th className="border border-gray-300 px-2 py-2 text-right">Ahorro Mes</th>
-                            <th className="border border-gray-300 px-2 py-2 text-right">Ahorro Acum</th>
+                            <th className="border border-gray-300 px-2 py-2 text-right">Ahorro</th>
                             {(tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') && (
                               <>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-purple-50">Util Trad (Mes)</th>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-purple-50">Util Trad (Acum)</th>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-purple-100">S.Util Trad (Mes)</th>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-purple-100">S.Util Trad (Acum)</th>
+                                <th className="border border-gray-300 px-2 py-2 text-right bg-purple-50">Util Trad</th>
+                                <th className="border border-gray-300 px-2 py-2 text-right bg-purple-100">S.Util Trad</th>
                               </>
                             )}
                             {(tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') && (
                               <>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-pink-50">Util Prod (Mes)</th>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-pink-50">Util Prod (Acum)</th>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-pink-100">S.Util Prod (Mes)</th>
-                                <th className="border border-gray-300 px-2 py-2 text-right bg-pink-100">S.Util Prod (Acum)</th>
+                                <th className="border border-gray-300 px-2 py-2 text-right bg-pink-50">Util Prod</th>
+                                <th className="border border-gray-300 px-2 py-2 text-right bg-pink-100">S.Util Prod</th>
                               </>
                             )}
-                            <th className="border border-gray-300 px-2 py-2 text-right bg-green-100">Total Mes</th>
+                            <th className="border border-gray-300 px-2 py-2 text-right bg-green-100 font-bold">Total Mes</th>
+                            <th className="border border-gray-300 px-2 py-2 text-right bg-red-100">Deuda</th>
+                            <th className="border border-gray-300 px-2 py-2 text-right bg-yellow-100 font-bold">Liquidación</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -4500,21 +4745,16 @@ const SistemaAhorroComunitario = () => {
                               <tr key={mes} className="hover:bg-gray-50">
                                 <td className="border border-gray-300 px-2 py-2 font-semibold">{nombreMes(mes)}</td>
                                 <td className="border border-gray-300 px-2 py-2 text-right">{formatearMoneda(ahorro)}</td>
-                                <td className="border border-gray-300 px-2 py-2 text-right font-semibold">{formatearMoneda(ahorroAcum)}</td>
                                 {(tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') && (
                                   <>
                                     <td className="border border-gray-300 px-2 py-2 text-right bg-purple-50">{formatearMoneda(utilTradMes)}</td>
-                                    <td className="border border-gray-300 px-2 py-2 text-right bg-purple-50 font-semibold">{formatearMoneda(utilTradAcum)}</td>
                                     <td className="border border-gray-300 px-2 py-2 text-right bg-purple-100">{formatearMoneda(sobreUtilTradMes)}</td>
-                                    <td className="border border-gray-300 px-2 py-2 text-right bg-purple-100 font-semibold">{formatearMoneda(sobreUtilTradAcum)}</td>
                                   </>
                                 )}
                                 {(tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') && (
                                   <>
                                     <td className="border border-gray-300 px-2 py-2 text-right bg-pink-50">{formatearMoneda(utilProdMes)}</td>
-                                    <td className="border border-gray-300 px-2 py-2 text-right bg-pink-50 font-semibold">{formatearMoneda(utilProdAcum)}</td>
                                     <td className="border border-gray-300 px-2 py-2 text-right bg-pink-100">{formatearMoneda(sobreUtilProdMes)}</td>
-                                    <td className="border border-gray-300 px-2 py-2 text-right bg-pink-100 font-semibold">{formatearMoneda(sobreUtilProdAcum)}</td>
                                   </>
                                 )}
                                 <td className="border border-gray-300 px-2 py-2 text-right bg-green-100 font-bold text-green-800">
@@ -4524,9 +4764,61 @@ const SistemaAhorroComunitario = () => {
                                     (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas' ? utilProdMes + sobreUtilProdMes : 0)
                                   )}
                                 </td>
+                                <td className="border border-gray-300 px-2 py-2 text-right bg-red-100 font-semibold text-red-800">
+                                  {formatearMoneda(calcularTotalesParticipante(p.consecutivo, mesSeleccionado).totalDeuda)}
+                                </td>
+                                {(() => {
+                                  const deudaMes = calcularTotalesParticipante(p.consecutivo, mesSeleccionado).totalDeuda;
+                                  const totalMes = ahorro +
+                                    (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas' ? utilTradMes + sobreUtilTradMes : 0) +
+                                    (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas' ? utilProdMes + sobreUtilProdMes : 0);
+                                  const liq = totalMes - deudaMes;
+                                  return (
+                                    <td className={`border border-gray-300 px-2 py-2 text-right font-bold ${liq >= 0 ? 'bg-yellow-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                                      {formatearMoneda(liq)}
+                                    </td>
+                                  );
+                                })()}
                               </tr>
                             );
                           })}
+                          
+                          {/* FILA DE TOTALES */}
+                          {participanteSeleccionado && (() => {
+                            const p = participantes[participanteSeleccionado];
+                            const _tot_ahorro = mesesPeriodo.filter(m => m <= mesSeleccionado).reduce((s, m) => s + (p.ahorrosMensuales?.find(a => a.mes === m)?.cantidad || 0), 0);
+                            const _tot_utilTrad = mesesPeriodo.filter(m => m <= mesSeleccionado).reduce((s, m) => s + calcularUtilidadTradicionalMes(p.consecutivo, m), 0);
+                            const _tot_sobreUtilTrad = mesesPeriodo.filter(m => m <= mesSeleccionado).reduce((s, m) => s + calcularSobreUtilidadTradicionalMes(p.consecutivo, m), 0);
+                            const _tot_utilProd = mesesPeriodo.filter(m => m <= mesSeleccionado).reduce((s, m) => s + calcularUtilidadProductividadMes(p.consecutivo, m), 0);
+                            const _tot_sobreUtilProd = mesesPeriodo.filter(m => m <= mesSeleccionado).reduce((s, m) => s + calcularSobreUtilidadProductividadMes(p.consecutivo, m), 0);
+                            const _tot_totalMes = _tot_ahorro +
+                              (tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas' ? _tot_utilTrad + _tot_sobreUtilTrad : 0) +
+                              (tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas' ? _tot_utilProd + _tot_sobreUtilProd : 0);
+                            const _tot_deuda = calcularTotalesParticipante(p.consecutivo, mesSeleccionado).totalDeuda;
+                            return (
+                              <tr className="bg-gray-200 font-bold border-t-2 border-gray-400">
+                                <td className="border border-gray-300 px-2 py-2 text-center font-bold">TOTALES</td>
+                                <td className="border border-gray-300 px-2 py-2 text-right">{formatearMoneda(_tot_ahorro)}</td>
+                                {(tipoUtilidad === 'tradicional' || tipoUtilidad === 'ambas') && (
+                                  <>
+                                    <td className="border border-gray-300 px-2 py-2 text-right bg-purple-50">{formatearMoneda(_tot_utilTrad)}</td>
+                                    <td className="border border-gray-300 px-2 py-2 text-right bg-purple-100">{formatearMoneda(_tot_sobreUtilTrad)}</td>
+                                  </>
+                                )}
+                                {(tipoUtilidad === 'productividad' || tipoUtilidad === 'ambas') && (
+                                  <>
+                                    <td className="border border-gray-300 px-2 py-2 text-right bg-pink-50">{formatearMoneda(_tot_utilProd)}</td>
+                                    <td className="border border-gray-300 px-2 py-2 text-right bg-pink-100">{formatearMoneda(_tot_sobreUtilProd)}</td>
+                                  </>
+                                )}
+                                <td className="border border-gray-300 px-2 py-2 text-right bg-green-100 font-bold text-green-800">{formatearMoneda(_tot_totalMes)}</td>
+                                <td className="border border-gray-300 px-2 py-2 text-right bg-red-100 font-bold text-red-800">{formatearMoneda(_tot_deuda)}</td>
+                                <td className={`border border-gray-300 px-2 py-2 text-right font-bold ${(_tot_totalMes - _tot_deuda) >= 0 ? 'bg-yellow-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                                  {formatearMoneda(_tot_totalMes - _tot_deuda)}
+                                </td>
+                              </tr>
+                            );
+                          })()}
                         </tbody>
                       </table>
                     </div>
@@ -4640,7 +4932,23 @@ const SistemaAhorroComunitario = () => {
                         </tr>
                       );
                     })}
-                  </tbody>
+                  
+                    <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
+                      <td className="border border-gray-300 px-2 py-2" colSpan="2">TOTALES</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-blue-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-pink-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularUtilidadProductividadAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-green-700">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2 text-right text-green-800 bg-green-50">
+                        {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesSeleccionado) + calcularUtilidadProductividadAcumulada(id, mesSeleccionado) + calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado), 0))}
+                      </td>
+                    </tr>
+                  </tbody>/tbody>
                 </table>
               </div>
             )}
@@ -4651,6 +4959,168 @@ const SistemaAhorroComunitario = () => {
               <strong>Sistema Real:</strong> Las utilidades se generan únicamente cuando los préstamos generan intereses pagados.
               Esto incentiva la productividad del capital y premia a quienes facilitan préstamos que se pagan.
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ============================================
+  // SECCIÓN 11 - NOTAS Y APUNTES
+  // ============================================
+  
+  const SeccionNotas = () => {
+    const [tituloNota, setTituloNota] = useState('');
+    const [contenidoNota, setContenidoNota] = useState('');
+    const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
+    const [notaEditando, setNotaEditando] = useState(null);
+    const categoriasNotas = ['General', 'Importante', 'Recordatorio', 'Reunión', 'Otro'];
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('General');
+
+    const agregarNota = () => {
+      if (!tituloNota.trim() || !contenidoNota.trim()) {
+        alert('❌ Complete el título y el contenido de la nota');
+        return;
+      }
+      const nuevaNota = {
+        consecutivo: consecutivoNota.toString().padStart(3, '0'),
+        titulo: tituloNota.trim(),
+        contenido: contenidoNota.trim(),
+        categoria: categoriaSeleccionada,
+        fecha: new Date().toLocaleDateString('es-CO'),
+        fechaISO: new Date().toISOString()
+      };
+      setNotas(prev => [...prev, nuevaNota]);
+      setConsecutivoNota(prev => prev + 1);
+      setTituloNota('');
+      setContenidoNota('');
+      setCategoriaSeleccionada('General');
+    };
+
+    const eliminarNota = (consecutivo) => {
+      if (!confirm('¿Eliminar esta nota?')) return;
+      setNotas(prev => prev.filter(n => n.consecutivo !== consecutivo));
+    };
+
+    const notasFiltradas = categoriaFiltro === 'Todas' 
+      ? notas 
+      : notas.filter(n => n.categoria === categoriaFiltro);
+
+    const colorCategoria = (cat) => ({
+      'General': 'bg-blue-100 text-blue-800',
+      'Importante': 'bg-red-100 text-red-800',
+      'Recordatorio': 'bg-yellow-100 text-yellow-800',
+      'Reunión': 'bg-green-100 text-green-800',
+      'Otro': 'bg-gray-100 text-gray-800'
+    }[cat] || 'bg-gray-100 text-gray-800');
+
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">📝 Notas y Apuntes</h2>
+                <p className="text-gray-600">Registro de observaciones y recordatorios</p>
+              </div>
+              <BotonVolver />
+            </div>
+
+            {/* Formulario nueva nota */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-5 mb-6">
+              <h3 className="text-lg font-semibold text-yellow-800 mb-4">➕ Nueva Nota</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                  <input
+                    type="text"
+                    value={tituloNota}
+                    onChange={(e) => setTituloNota(e.target.value)}
+                    placeholder="Título de la nota..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                  <select
+                    value={categoriaSeleccionada}
+                    onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  >
+                    {categoriasNotas.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contenido *</label>
+                <textarea
+                  value={contenidoNota}
+                  onChange={(e) => setContenidoNota(e.target.value)}
+                  placeholder="Escribe tu nota aquí..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 resize-none"
+                />
+              </div>
+              <button
+                onClick={agregarNota}
+                className="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold flex items-center gap-2"
+              >
+                <Save size={18} />
+                Guardar Nota
+              </button>
+            </div>
+
+            {/* Filtro por categoría */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {['Todas', ...categoriasNotas].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaFiltro(cat)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    categoriaFiltro === cat
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {cat} {cat === 'Todas' ? `(${notas.length})` : `(${notas.filter(n=>n.categoria===cat).length})`}
+                </button>
+              ))}
+            </div>
+
+            {/* Lista de notas */}
+            {notasFiltradas.length > 0 ? (
+              <div className="space-y-4">
+                {notasFiltradas.slice().reverse().map(nota => (
+                  <div key={nota.consecutivo} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">#{nota.consecutivo}</span>
+                        <h4 className="font-bold text-gray-800">{nota.titulo}</h4>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorCategoria(nota.categoria)}`}>
+                          {nota.categoria}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">{nota.fecha}</span>
+                        <button
+                          onClick={() => eliminarNota(nota.consecutivo)}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          title="Eliminar nota"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 whitespace-pre-wrap text-sm">{nota.contenido}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <p className="text-lg">📭 No hay notas registradas</p>
+                <p className="text-sm mt-1">Crea tu primera nota usando el formulario de arriba</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -4908,7 +5378,7 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
             <thead>
               <tr>
                 <th class="nombre-col">Nombre</th>
-                <th class="doc-col">Documento</th>
+                <th class="doc-col">N°Documento</th>
 				<th class="fecha-col">Fecha</th>
                 <th class="firma-col">Firma</th>
                 <th class="huella-col">Huella</th>
@@ -5673,6 +6143,7 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
       {seccionActual === 'seccion8' && <Seccion8 />}
       {seccionActual === 'seccion9' && <Seccion9 />}
       {seccionActual === 'seccion10' && <Seccion10 />}
+      {seccionActual === 'seccionNotas' && <SeccionNotas />}
       {seccionActual === 'caja' && <SeccionCaja />}
     </div>
 	
@@ -5685,6 +6156,7 @@ Todos los participantes se comprometen a cumplir con estos estatutos y las decis
         </p>
       </div>
     </div>
+	
   );
 };
 
