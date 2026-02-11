@@ -2433,7 +2433,7 @@ const SistemaAhorroComunitario = () => {
                         {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesSeleccionado) + calcularUtilidadTradicionalAcumulada(id, mesSeleccionado), 0))}
                       </td>
                     </tr>
-                  </tbody>/tbody>
+                  </tbody>
                 </table>
               </div>
             )}
@@ -2544,7 +2544,7 @@ const SistemaAhorroComunitario = () => {
                         {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado) - calcularSobreUtilidadTradicionalAcumulada(id, mesSeleccionado), 0))}
                       </td>
                     </tr>
-                  </tbody>/tbody>
+                  </tbody>
                 </table>
               </div>
             )}
@@ -4948,7 +4948,7 @@ const SistemaAhorroComunitario = () => {
                         {formatearMoneda(Object.keys(participantes).reduce((sum, id) => sum + calcularAhorroHastaMes(id, mesSeleccionado) + calcularUtilidadProductividadAcumulada(id, mesSeleccionado) + calcularSobreUtilidadProductividadAcumulada(id, mesSeleccionado), 0))}
                       </td>
                     </tr>
-                  </tbody>/tbody>
+                  </tbody>
                 </table>
               </div>
             )}
